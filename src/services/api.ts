@@ -5,25 +5,80 @@ import {
   AnimeMediaType,
   CombinedApiResponse,
   MoeApiResponse,
+  ResponseData,
 } from "types/api";
+import { GraphQLClient } from "graphql-request";
 
 export class Moe {
   private moeBaseUrl: string;
   private anilistBaseUrl: string;
   private anilistDefaultQuery: string;
+  private graphqlClient: GraphQLClient;
 
   constructor() {
     this.moeBaseUrl = "https://api.trace.moe/";
-    this.anilistBaseUrl = "https://graphql.anilist.co";
-    this.anilistDefaultQuery =
-      "query ($ids: [Int]) { Page(page: 1, perPage: 50) { media(id_in: $ids, type: ANIME) { id title { native romaji english } type format status startDate { year month day } endDate { year month day } season episodes duration source coverImage { large medium } bannerImage genres popularity averageScore stats { scoreDistribution { score amount } } isAdult externalLinks { id url site } siteUrl } } }";
+    this.anilistBaseUrl = "https://trace.moe/anilist/";
+    this.anilistDefaultQuery = `
+      query ($ids: [Int]) {
+        Page(page: 1, perPage: 50) {
+          media(id_in: $ids, type: ANIME) {
+            id
+            title {
+              native
+              romaji
+              english
+            }
+            type
+            format
+            status
+            startDate {
+              year
+              month
+              day
+            }
+            endDate {
+              year
+              month
+              day
+            }
+            season
+            episodes
+            duration
+            source
+            coverImage {
+              large
+              medium
+            }
+            bannerImage
+            genres
+            popularity
+            averageScore
+            synonyms
+            stats {
+              scoreDistribution {
+                score
+                amount
+              }
+            }
+            isAdult
+            externalLinks {
+              id
+              url
+              site
+            }
+            siteUrl
+          }
+        }
+      }
+    `;
+    this.graphqlClient = new GraphQLClient(this.anilistBaseUrl);
   }
 
   async searchByUrl(text: string): Promise<CombinedApiResponse> {
     const status = await this.checkStatus();
     if (!status)
       return {
-        status: status,
+        status: status ? 200 : 400,
         error: "",
         result: [],
       };
@@ -43,28 +98,41 @@ export class Moe {
       }
     });
 
-    const options = {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Accept: "application/json",
-      },
-      body: JSON.stringify({
-        query:
-          "query ($ids: [Int]) { Page(page: 1, perPage: 50) { media(id_in: $ids, type: ANIME) { id title { native romaji english } type format status startDate { year month day } endDate { year month day } season episodes duration source coverImage { large medium } bannerImage genres popularity averageScore stats { scoreDistribution { score amount } } isAdult externalLinks { id url site } siteUrl } } }",
-        variables: {
-          ids: ids,
-        },
-      }),
-    };
+    if (ids.length === 0) {
+      return {
+        status: 400,
+        error: "No valid Anilist IDs found.",
+        result: [],
+      };
+    }
 
-    const aniRes: AnimeApiResponse = await this.request(
-      this.anilistBaseUrl,
-      options
-    );
+    const variables = { ids };
+    let aniRes: ResponseData;
+    try {
+      aniRes = await this.graphqlClient.request(
+        this.anilistDefaultQuery,
+        variables
+      );
+      console.log(JSON.stringify(aniRes, null, 2));
+    } catch (error) {
+      console.error("Error fetching data from Anilist:", error);
+      return {
+        status: 400,
+        error: "Failed to fetch data from Anilist.",
+        result: [],
+      };
+    }
 
-    const newData = this.formatApiData(moeRes, aniRes.data.Page.media);
-    return newData; // 合并两个响应并返回
+    if (!aniRes || !aniRes.Page) {
+      return {
+        status: 400,
+        error: "Invalid response from Anilist.",
+        result: [],
+      };
+    }
+
+    const newData = this.formatApiData(moeRes, aniRes.Page.media);
+    return newData;
   }
 
   formatApiData(
@@ -110,8 +178,7 @@ export class Moe {
       .filter((result) => result !== null) as CombinedResultType[]; // Ensure the result type is correct
 
     const animeObj = {
-      frameCount: data1.frameCount,
-      status: data1.status,
+      status: 200,
       error: data1.error,
       result: newData,
     };

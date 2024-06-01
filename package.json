@@ -3,6 +3,7 @@
     "dev": "bun run --hot src/index.ts"
   },
   "dependencies": {
+    "graphql-request": "^7.0.1",
     "hono": "^4.4.2"
   },
   "devDependencies": {

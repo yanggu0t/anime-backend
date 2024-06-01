@@ -31,7 +31,7 @@ export type CombinedResultType = {
 
 export type CombinedApiResponse = {
   frameCount?: number;
-  status?: boolean;
+  status?: number;
   error: string;
   result: CombinedResultType[];
 };
@@ -113,7 +113,7 @@ type Page = {
 };
 
 // 定义响应数据类型
-type ResponseData = {
+export type ResponseData = {
   Page: Page;
 };
 
