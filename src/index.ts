@@ -44,7 +44,7 @@ const preCheckMiddleware = async (c: Context, next: Next) => {
 console.log(`================${Date()}===============`);
 
 app.get("/", (c) => {
-  return c.text("Hello Hono!");
+  return c.text("ok!");
 });
 
 // Middleware for POST routes
@@ -58,7 +58,7 @@ app.post("/v1/url", async (c) => {
     const res = await MoeService.searchByUrl(url);
     return c.json(
       {
-        status: res.status,
+        status: 200,
         res: res,
       },
       200
@@ -70,7 +70,7 @@ app.post("/v1/url", async (c) => {
       return c.json(
         {
           status: 400,
-          message: error.message,
+          res: error.message,
         },
         400
       );
@@ -79,7 +79,7 @@ app.post("/v1/url", async (c) => {
       return c.json(
         {
           status: 400,
-          message: "An unknown error occurred",
+          res: "An unknown error occurred",
         },
         400
       );
@@ -92,23 +92,26 @@ app.post("/v1/upload", async (c) => {
   if (contentType?.includes("multipart/form-data")) {
     const formData = await c.req.formData();
     const file = formData.get("file");
-
-    console.log();
-
     if (file && file instanceof File) {
       try {
         const res = await MoeService.searchByUpload(file);
-        return c.json(res);
+        return c.json(
+          {
+            status: 200,
+            res: res,
+          },
+          200
+        );
       } catch (error) {
         if (error instanceof Error) {
-          return c.json({ message: error.message }, 500);
+          return c.json({ status: 400, res: error.message }, 400);
         }
       }
     } else {
       return c.json(
         {
           status: 400,
-          message: "No file uploaded or invalid file type.",
+          res: "No file uploaded or invalid file type.",
         },
         400
       );
@@ -117,7 +120,7 @@ app.post("/v1/upload", async (c) => {
     return c.json(
       {
         status: 400,
-        message: "Invalid content type.",
+        res: "Invalid content type.",
       },
       400
     );
