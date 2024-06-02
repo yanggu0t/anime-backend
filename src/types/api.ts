@@ -1,12 +1,13 @@
+// 定義 Moe Api 的反饋類型
 export type MoeApiResponse = {
   frameCount?: number;
-  status?: boolean;
+  status: boolean;
   error: string;
-  result: MoeResult[];
+  result: MoeSearchResult[];
 };
 
 // 定义 Moe result 搜索结果类型
-export type MoeResult = {
+export type MoeSearchResult = {
   anilist: string;
   filename: string;
   episode: number;
@@ -18,8 +19,8 @@ export type MoeResult = {
 };
 
 // 定义合并结果类型
-export type CombinedResultType = {
-  anime: AnimeMediaType;
+export type MoeAnilistCombinedResult = {
+  anime: AnimeMediaDetails<ExportTitle>;
   filename: string;
   episode: number;
   from: number;
@@ -29,11 +30,12 @@ export type CombinedResultType = {
   image: string;
 };
 
-export type CombinedApiResponse = {
+// 整合後的 Moe Api 反饋類型
+export type MoeAnilistCombinedApiResponse = {
   frameCount?: number;
   status?: number;
   error: string;
-  result: CombinedResultType[];
+  result: MoeAnilistCombinedResult[];
 };
 
 export type ConfigType = {
@@ -44,80 +46,86 @@ export type ConfigType = {
   quotaUsed: number;
 };
 
-// 定义标题类型
-type Title = {
+// 定义接受标题类型
+export type AcceptTitle = {
   native: string;
   romaji: string;
   english: string;
   chinese?: string;
 };
 
+// Title 輸出的類型
+export type ExportTitle = {
+  jp: string;
+  eng: string;
+  zh?: string;
+  romaji: string;
+};
+
 // 定义图片类型
-type Image = {
+type AnimeImage = {
   large: string;
   medium: string;
 };
 
 // 定义评分分布类型
-type ScoreDistribution = {
+type AnimeScoreDistribution = {
   score: number;
   amount: number;
 };
 
 // 定义统计类型
-type Stats = {
-  scoreDistribution: ScoreDistribution[];
+type AnimeStatistics = {
+  scoreDistribution: AnimeScoreDistribution[];
 };
 
 // 定义外部链接类型
-type ExternalLink = {
+type MediaExternalLink = {
   id: number;
   url: string;
   site: string;
 };
 
 // 定义媒体类型
-export type AnimeMediaType = {
+export type AnimeMediaDetails<T extends AcceptTitle | ExportTitle> = {
   id: number;
-  title: Title;
+  title: T;
   type: string;
   format: string;
   status: string;
-  startDate: DateType;
-  endDate: DateType;
+  startDate: MediaDate;
+  endDate: MediaDate;
   season: string;
   episodes: number;
-  duration: number;
   source: string;
-  coverImage: Image;
+  coverImage: AnimeImage;
   bannerImage: string;
   genres: string[];
-  popularity: number;
   averageScore: number;
-  stats: Stats;
+  stats: AnimeStatistics;
   isAdult: boolean;
-  externalLinks: ExternalLink[];
+  externalLinks: MediaExternalLink[];
   siteUrl: string;
 };
 
 // 定义日期类型
-type DateType = {
+type MediaDate = {
   year: number;
   month: number;
   day: number;
 };
 
 // 定义页面类型
-type Page = {
-  media: AnimeMediaType[];
+type AnimePage = {
+  media: AnimeMediaDetails<AcceptTitle>[];
 };
 
 // 定义响应数据类型
-export type ResponseData = {
-  Page: Page;
+export type AnimeApiResponseData = {
+  Page: AnimePage;
 };
 
 // 定义API响应类型
 export type AnimeApiResponse = {
-  data: ResponseData;
+  data: AnimeApiResponseData;
 };

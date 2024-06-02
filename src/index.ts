@@ -1,11 +1,10 @@
 import { Hono } from "hono";
-import { Moe } from "./services/api";
+import { MoeService } from "./services/api";
 import { cors } from "hono/cors";
+import { Context, Next } from "hono";
 
 const app = new Hono();
-const moe = new Moe();
 
-// 使用 CORS 中间件，允许来自 anime1.work 和 localhost 的请求
 app.use(
   "*",
   cors({
@@ -16,7 +15,7 @@ app.use(
       ) {
         return origin;
       }
-      return null; // 如果 origin 不匹配，拒绝请求
+      return null;
     },
     allowMethods: ["POST", "GET"],
     exposeHeaders: ["Content-Length"],
@@ -25,30 +24,100 @@ app.use(
   })
 );
 
+// Middleware for performing pre-checks
+const preCheckMiddleware = async (c: Context, next: Next) => {
+  const preCheck = await MoeService.checkStatus();
+  if (!preCheck) {
+    // If the pre-check fails, respond with a 429 (Too Many Requests) or appropriate status
+    return c.json(
+      {
+        status: 429,
+        message: "Pre-check failed: Quota exceeded or service unavailable.",
+      },
+      429
+    );
+  }
+  // If the pre-check passes, proceed with the next middleware or route handler
+  return next();
+};
+
+console.log(`================${Date()}===============`);
+
 app.get("/", (c) => {
   return c.text("Hello Hono!");
 });
 
-console.log(`================${Date()}===============`);
+// Middleware for POST routes
+app.use("/v1/*", preCheckMiddleware); // Apply preCheckMiddleware to all POST routes under '/v1/'
 
 app.post("/v1/url", async (c) => {
   try {
     const req = await c.req.json();
     const { url } = req;
-    const res = await moe.searchByUrl(url);
+    // If the pre-check passes, proceed with the main request
+    const res = await MoeService.searchByUrl(url);
     return c.json(
       {
-        test: 200,
+        status: res.status,
         res: res,
       },
       200
     );
   } catch (error) {
-    console.error("Error in /v1 route:", error);
-    // 捕获解析 JSON 时的错误，并返回 400 错误响应
+    console.error("Error in /v1/url route:", error);
+    if (error instanceof Error) {
+      // If it's an Error instance, we can safely access message, name, stack, etc.
+      return c.json(
+        {
+          status: 400,
+          message: error.message,
+        },
+        400
+      );
+    } else {
+      // If it's not an Error instance, handle or log appropriately
+      return c.json(
+        {
+          status: 400,
+          message: "An unknown error occurred",
+        },
+        400
+      );
+    }
+  }
+});
+
+app.post("/v1/upload", async (c) => {
+  const contentType = c.req.header("Content-Type");
+  if (contentType?.includes("multipart/form-data")) {
+    const formData = await c.req.formData();
+    const file = formData.get("file");
+
+    console.log();
+
+    if (file && file instanceof File) {
+      try {
+        const res = await MoeService.searchByUpload(file);
+        return c.json(res);
+      } catch (error) {
+        if (error instanceof Error) {
+          return c.json({ message: error.message }, 500);
+        }
+      }
+    } else {
+      return c.json(
+        {
+          status: 400,
+          message: "No file uploaded or invalid file type.",
+        },
+        400
+      );
+    }
+  } else {
     return c.json(
       {
-        error: error,
+        status: 400,
+        message: "Invalid content type.",
       },
       400
     );
