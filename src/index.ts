@@ -8,18 +8,10 @@ const app = new Hono();
 app.use(
   "*",
   cors({
-    origin: (origin) => {
-      if (
-        origin === "https://anime1.work" ||
-        origin?.startsWith("http://localhost")
-      ) {
-        return origin;
-      }
-      return null;
-    },
+    origin: "*", // 允許所有來源
     allowMethods: ["POST", "GET"],
     exposeHeaders: ["Content-Length"],
-    // maxAge: 600,
+    maxAge: 600,
     credentials: true,
   })
 );
