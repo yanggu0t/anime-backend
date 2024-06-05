@@ -88,7 +88,7 @@ export function formatApiData(
               id: matchItem.id,
               title: {
                 jp: matchItem.title.native,
-                eng: matchItem.title.english,
+                en: matchItem.title.english,
                 zh: matchItem.title.chinese,
               },
               type: matchItem.type,

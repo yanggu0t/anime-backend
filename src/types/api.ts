@@ -57,7 +57,7 @@ export type AcceptTitle = {
 // Title 輸出的類型
 export type ExportTitle = {
   jp: string;
-  eng: string;
+  en: string;
   zh: string;
 };
 
