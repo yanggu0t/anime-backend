@@ -51,15 +51,14 @@ export type AcceptTitle = {
   native: string;
   romaji: string;
   english: string;
-  chinese?: string;
+  chinese: string;
 };
 
 // Title 輸出的類型
 export type ExportTitle = {
   jp: string;
   eng: string;
-  zh?: string;
-  romaji: string;
+  zh: string;
 };
 
 // 定义图片类型

@@ -90,7 +90,6 @@ export function formatApiData(
                 jp: matchItem.title.native,
                 eng: matchItem.title.english,
                 zh: matchItem.title.chinese,
-                romaji: matchItem.title.romaji,
               },
               type: matchItem.type,
               format: matchItem.format,
