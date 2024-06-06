@@ -119,7 +119,4 @@ app.post("/v1/upload", async (c) => {
   }
 });
 
-export default {
-  port: Bun.env.MOE_API_TOKEN,
-  fetch: app.fetch,
-};
+export default app;
