@@ -79,6 +79,7 @@ export function formatApiData(
   data1: MoeApiResponse,
   data2: AnimeMediaDetails<AcceptTitle>[]
 ): MoeAnilistCombinedApiResponse {
+  const seen = new Set<string>();
   const newData = data1.result
     .map((item) => {
       const matchItem = data2.find((v) => v.id === parseInt(item.anilist));
@@ -118,7 +119,17 @@ export function formatApiData(
           }
         : null;
     })
-    .filter((result) => result !== null) as MoeAnilistCombinedResult[];
+    .filter((result) => {
+      if (result === null) return false;
+      if (result.similarity < 0.8) return false;
+      const key = `${result.anime.id}-${result.anime.episodes}`;
+      if (seen.has(key)) {
+        return false;
+      } else {
+        seen.add(key);
+        return true;
+      }
+    }) as MoeAnilistCombinedResult[];
 
   return { error: data1.error, result: newData };
 }
